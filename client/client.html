@@ -10,33 +10,62 @@
     const handleResponse = (xhr) => {
       const type = xhr.getResponseHeader('Content-Type');
       const content = document.querySelector('#content');
+      const status = xhr.status;
       content.appendChild(document.createElement('hr'));
 
       const h1 = document.createElement('h1');
       const p = document.createElement('p');
       const h2 = document.createElement('h2');
-      const rawData = document.createElement('p');
 
-      h2.textContent = type;
-      rawData.textContent = xhr.response;
-      
-      if(type === 'application/json'){
-        const obj = JSON.parse(xhr.response);
-        h1.textContent = `${obj.message}`;
-      }else if(type === 'text/xml'){
-        const message = xhr.responseXML.querySelector('message').textContent;
+      //Switch statement for setting header
+      switch (status) {
+        case 200:
+          h1.textContent = 'Success';
+          break;
+        case 400:
+          h1.textContent = 'Bad Request';
+          break;
+        case 401:
+          h1.textContent = 'Unauthorized';
+          break;
+        case 403:
+          h1.textContent = 'Forbidden';
+          break;
+        case 500:
+          h1.textContent = 'Internal Service Error';
+          break;
+        case 501:
+          h1.textContent = 'Not Implemented';
+          break;
+        case 404:
+          h1.textContent = 'Not Found';
+          break;
       }
-      
+
+
+      h2.textContent = type; //Sets first header equal to Content Type
+
+
+      if (type === 'text/xml') { //For XML
+        const message = xhr.responseXML.querySelector('message').textContent;
+        p.textContent = `Message: ${message}`;
+        
+      } else{ //Default to JSON
+        const obj = JSON.parse(xhr.response);
+        p.textContent = `Message: ${obj.message}`;
+      }
+
+      //Append the newly gained information
       content.appendChild(h1);
-      content.appendChild(p);
       content.appendChild(h2);
-      content.appendChild(rawData);
+      content.appendChild(p);
+
     };
 
-    const sendAjax = () => {
-      let url =  document.getElementById('page').options[document.getElementById('page').selectedIndex].value;;
-      let acceptedType = document.getElementById('type').options[document.getElementById('type').selectedIndex].value;
-      const xhr = new XMLHttpRequest;
+    const sendAjax = () => { //Ajax Method to send Accept Header
+      let url = document.getElementById('page').options[document.getElementById('page').selectedIndex].value;; //Get the desired URL
+      let acceptedType = document.getElementById('type').options[document.getElementById('type').selectedIndex].value; //Get the desired Type
+      const xhr = new XMLHttpRequest; 
       xhr.open('GET', url);
 
       xhr.setRequestHeader("Accept", acceptedType);
@@ -45,7 +74,7 @@
       xhr.send();
     };
 
-    const init = () => {
+    const init = () => { //Setup the button
       const sendBtn = document.querySelector('#send');
 
       sendBtn.addEventListener('click', sendAjax);

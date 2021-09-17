@@ -1,109 +1,157 @@
 const respond = (request, response, status, object, type) => {
   response.writeHead(status, { 'CONTENT-Type': type });
-  response.write(JSON.stringify(object));
+  if (type === 'application/json') { //Stringify object if its JSON
+    response.write(JSON.stringify(object));
+  } else {
+    response.write(object);
+  }
   response.end();
 };
 
-//Success Code
+// Success Code
 const success = (request, response, params, acceptedTypes) => {
   const object = {
     message: 'This is a successful response',
   };
-  //XML case
+  // XML case
   if (acceptedTypes[0] === 'text/xml') {
     let responseXML = '<response>';
     responseXML = `${responseXML} <message>${object.message}</message>`;
     responseXML = `${responseXML} </response>`;
     return respond(request, response, 200, responseXML, 'text/xml');
   }
-  //Default JSON Case
-  const responseString = JSON.stringify(object);
-  console.log(responseString);
-  return respond(request, response, 200, responseString, 'application/json');
+
+  return respond(request, response, 200, object, 'application/json');
 };
 
-//BadRequest Code
+// BadRequest Code
 const badRequest = (request, response, params, acceptedTypes) => {
   const object = {
     message: 'This request has the required parameters',
   };
+  let statusCode = 200;
+  if (!params.valid || params.valid !== 'true') { //Checks for Parameters
+    object.message = 'Missing valid query parameter set to true';
+    object.id = 'badRequest';
+    statusCode = 400;
+  }
 
   // XML case
   if (acceptedTypes[0] === 'text/xml') {
-    if (!params.valid || params.valid !== 'true') { // XML if invalid
-      object.message = 'Missing "valid" query parameter set to true';
-      object.id = 'badRequest';
-      let responseXML = '<response>';
-      responseXML = `${responseXML} <message>${object.message}</message>`;
-      responseXML = `${responseXML} <id>${object.message}</message>`;
-      responseXML = `${responseXML} </response>`;
-      return respond(request, response, 400, responseXML, 'text/xml');
-    } // XML if Valid
     let responseXML = '<response>';
     responseXML = `${responseXML} <message>${object.message}</message>`;
+    if (statusCode === 400) {
+      responseXML = `${responseXML} <id>${object.id}</id>`;
+    }
     responseXML = `${responseXML} </response>`;
-    return respond(request, response, 200, responseXML, 'text/xml');
+    return respond(request, response, statusCode, responseXML, 'text/xml');
   }
-
-  // Default JSON case
-  if (!params.valid || params.valid !== 'true') {
-    object.message = 'Missing "valid" query parameter set to true';
-    object.id = 'badRequest';
-    const responseString = JSON.stringify(object);
-    return respond(request, response, 400, responseString, 'application/json');
-  }
-  const responseString = JSON.stringify(object);
-  return respond(request, response, 200, responseString, 'application/json');
+  //Default to JSON
+  return respond(request, response, statusCode, object, 'application/json');
 };
 
+//Unauthorized Code
 const unAuthorizedRequest = (request, response, params, acceptedTypes) => {
   const object = {
     message: 'You are logged in and authorized to view',
   };
+  let statusCode = 200;
 
-  const responseString = JSON.stringify(object);
-  if (!params.loggedIn || params.loggedIn !== 'yes') {
-    object.message = 'Missing "loggedIn" query parameter set to yes';
+  if (!params.loggedIn || params.loggedIn !== 'yes') { //Checks for Parameters
+    object.message = 'Missing loggedIn query parameter set to yes';
     object.id = 'missingAuth';
-    return respond(request, response, 401, responseString, 'application/json');
+    statusCode = 401;
   }
-  return respond(request, response, 200, responseString, 'application/json');
+
+  // XML Case
+  if (acceptedTypes[0] === 'text/xml') {
+    let responseXML = '<response>';
+    responseXML = `${responseXML} <message>${object.message}</message>`;
+    if (statusCode === 401) {
+      responseXML = `${responseXML} <id>${object.id}</id>`;
+    }
+    responseXML = `${responseXML} </response>`;
+    return respond(request, response, statusCode, responseXML, 'text/xml');
+  }
+  //Default to JSON
+  return respond(request, response, statusCode, object, 'application/json');
 };
 
+//Forbidden Code
 const forbidden = (request, response, params, acceptedTypes) => {
   const object = {
     message: 'You are forbidden from accessing this content',
     id: 'forbidden',
   };
-  const responseString = JSON.stringify(object);
-  return respond(request, response, 403, responseString, 'application/json');
+
+  // XML Case
+  if (acceptedTypes[0] === 'text/xml') {
+    let responseXML = '<response>';
+    responseXML = `${responseXML} <message>${object.message}</message>`;
+    responseXML = `${responseXML} <id>${object.id}</id>`;
+    responseXML = `${responseXML} </response>`;
+    return respond(request, response, 403, responseXML, 'text/xml');
+  }
+  //Default to JSON
+  return respond(request, response, 403, object, 'application/json');
 };
 
+//Internal Error Code
 const internal = (request, response, params, acceptedTypes) => {
   const object = {
     message: 'Internal Server Error. Something went wrong.',
     id: 'internal Error',
   };
-  const responseString = JSON.stringify(object);
-  return respond(request, response, 500, responseString, 'application/json');
+
+  // XML Case
+  if (acceptedTypes[0] === 'text/xml') {
+    let responseXML = '<response>';
+    responseXML = `${responseXML} <message>${object.message}</message>`;
+    responseXML = `${responseXML} <id>${object.id}</id>`;
+    responseXML = `${responseXML} </response>`;
+    return respond(request, response, 500, responseXML, 'text/xml');
+  }
+  //Default to JSON
+  return respond(request, response, 500, object, 'application/json');
 };
 
+//Not Implemented Code
 const notImplemented = (request, response, params, acceptedTypes) => {
   const object = {
     message: 'This page has not been implemented',
     id: 'notImplemented',
   };
-  const responseString = JSON.stringify(object);
-  return respond(request, response, 501, responseString, 'application/json');
+
+  // XML Case
+  if (acceptedTypes[0] === 'text/xml') {
+    let responseXML = '<response>';
+    responseXML = `${responseXML} <message>${object.message}</message>`;
+    responseXML = `${responseXML} <id>${object.id}</id>`;
+    responseXML = `${responseXML} </response>`;
+    return respond(request, response, 501, responseXML, 'text/xml');
+  }
+  //Default to JSON
+  return respond(request, response, 501, object, 'application/json');
 };
 
+
+//Not Found Code
 const notFound = (request, response, params, acceptedTypes) => {
   const object = {
     message: 'The page you are looking for was not found.',
     id: 'notFound',
   };
-  const responseString = JSON.stringify(object);
-  return respond(request, response, 404, responseString, 'application/json');
+
+  // XML Case
+  if (acceptedTypes[0] === 'text/xml') {
+    let responseXML = '<response>';
+    responseXML = `${responseXML} <message>${object.message}</message>`;
+    responseXML = `${responseXML} <id>${object.id}</id>`;
+    responseXML = `${responseXML} </response>`;
+    return respond(request, response, 404, responseXML, 'text/xml');
+  }
+  //Default to JSON
+  return respond(request, response, 404, object, 'application/json');
 };
 
 module.exports = {
